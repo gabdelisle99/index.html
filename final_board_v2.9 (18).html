@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>DASHBOARD ELITE V2.9 - Nissan Brossard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+
+        /* ===== ÉCRAN MOT DE PASSE ===== */
+        #login-screen { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #c30a1e 100%); z-index: 9999; align-items: center; justify-content: center; }
+        .login-box { background: white; border-radius: 16px; padding: 40px; width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        .login-logo { font-size: 42px; margin-bottom: 10px; }
+        .login-title { font-size: 20px; font-weight: bold; color: #c30a1e; margin-bottom: 4px; }
+        .login-sub { font-size: 12px; color: #999; margin-bottom: 25px; }
+        .login-input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; text-align: center; letter-spacing: 4px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        .login-input:focus { border-color: #c30a1e; }
+        .login-btn { width: 100%; padding: 12px; background: #c30a1e; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 12px; transition: 0.2s; }
+        .login-btn:hover { background: #a00818; }
+        .login-error { color: #e74c3c; font-size: 12px; margin-top: 8px; display: none; }
+        #app-content { display: none; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 30px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 5px solid #c30a1e; }
+        .dealer-name { font-size: 22px; font-weight: bold; color: #333; }
+        
+        .top-stats { display: grid; grid-template-columns: 1fr 2.5fr 1fr; gap: 15px; margin-bottom: 10px; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .podium-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #c30a1e; border-bottom: 1px solid #eee; }
+        .podium-item { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+        
+        .goals-wrapper { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .goal-container { background: white; padding: 12px 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .goal-input { width: 45px; padding: 2px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; text-align: center; }
+        
+        .progress-bg { background: #eee; height: 12px; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
+        .bar-neuf { background: #3498db; }
+        .bar-use { background: #7f8c8d; }
+
+        .legend-bar { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: center; gap: 15px; font-size: 11px; font-weight: bold; color: #555; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-wrap: wrap; }
+        .leg-item { display: flex; align-items: center; gap: 5px; }
+        .box { width: 12px; height: 12px; border-radius: 2px; }
+
+        .container { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { border-collapse: collapse; min-width: 3100px; table-layout: fixed; }
+        th, td { border: 1px solid #dee2e6; width: 115px; text-align: center; }
+        th { background: #c30a1e; color: white; padding: 8px; font-size: 11px; position: sticky; top: 0; z-index: 10; }
+        .rep-col { width: 160px; position: sticky; left: 0; z-index: 11; background: #f8f9fa; font-weight: bold; border-right: 4px solid #c30a1e; text-align: left; padding-left: 10px; }
+        
+        .sale-block { border-bottom: 1px solid #eee; padding: 4px; background: #fff; position: relative; cursor: pointer; min-height: 58px; transition: 0.2s; }
+        .sale-block.is-pinned { background: #9b59b6 !important; color: white !important; }
+        .is-pinned .info-display, .is-pinned .client-name, .is-pinned .city-display { color: white !important; }
+
+        .info-display { font-size: 9px; display: block; min-height: 11px; overflow: hidden; white-space: nowrap; pointer-events: none; }
+        .client-name { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #000; }
+
+        .delete-btn { position: absolute; top: 2px; left: 2px; font-size: 10px; color: #ddd; cursor: pointer; z-index: 5; }
+        .pin-btn { position: absolute; top: 15px; right: 2px; font-size: 10px; color: #ddd; cursor: pointer; z-index: 5; }
+
+        /* ===== NOUVELLE BARRE DE STATUT EN 2 SEGMENTS ===== */
+        .status-bar-wrap { display: flex; width: 100%; height: 12px; border-radius: 2px; overflow: hidden; margin-top: 3px; background: #eee; gap: 1px; }
+        .status-seg { flex: 1; height: 100%; background: #eee; border-radius: 1px; transition: background 0.3s; }
+        /* Approuvé = moitié jaune gauche */
+        .seg-left.approuve  { background: #f1c40f; }
+        /* Livré = les deux jaunes */
+        .seg-left.livre     { background: #f1c40f; }
+        .seg-right.livre    { background: #f1c40f; }
+        /* Comptabilisé = les deux verts */
+        .seg-left.comptabilise  { background: #27ae60; }
+        .seg-right.comptabilise { background: #27ae60; }
+        /* Annulations */
+        .seg-left.annule-credit  { background: #e74c3c; }
+        .seg-right.annule-credit { background: #e74c3c; }
+        .seg-left.annule-client  { background: #e67e22; }
+        .seg-right.annule-client { background: #e67e22; }
+        /* Vendu = moitié gauche bleue */
+        .seg-left.vendu  { background: #3498db; }
+
+        .type-toggle { position: absolute; top: 2px; right: 2px; font-size: 8px; padding: 1px 3px; border-radius: 3px; background: #f0f0f0; border: 1px solid #ccc; font-weight: bold; color: #333; }
+        .type-n { background: #3498db !important; color: white !important; }
+        .type-u { background: #95a5a6 !important; color: white !important; }
+        .type-csv { background: #2c3e50 !important; color: white !important; }
+        .type-cmd { background: #e67e22 !important; color: white !important; }
+
+        /* Pastille upload F&I */
+        .upload-btn { position: absolute; bottom: 2px; left: 2px; font-size: 10px; cursor: pointer; z-index: 5; opacity: 0.4; transition: opacity 0.2s; }
+        .upload-btn:hover { opacity: 1; }
+        .upload-btn.has-file { opacity: 1; color: #27ae60; }
+
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+        .modal { background: white; padding: 25px; border-radius: 12px; width: 500px; border-top: 8px solid #c30a1e; max-height: 90vh; overflow-y: auto; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal input, .modal select, .modal textarea { width: 100%; border: 1px solid #ccc; padding: 7px; border-radius: 4px; box-sizing: border-box; }
+        .modal textarea { resize: vertical; min-height: 50px; font-family: inherit; font-size: 13px; }
+        
+        /* Statut selector dans le modal */
+        .statut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+        .statut-opt { padding: 6px 4px; border-radius: 5px; border: 2px solid #eee; text-align: center; font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .statut-opt:hover { opacity: 0.8; }
+        .statut-opt.active { border-color: #333 !important; transform: scale(1.05); }
+        .s-vide      { background: #f5f5f5; color: #999; }
+        .s-approuve  { background: #f1c40f; color: #333; }
+        .s-livre     { background: #e6b800; color: #333; }
+        .s-compta    { background: #27ae60; color: white; }
+        .s-vendu     { background: #3498db; color: white; }
+        .s-ann-credit{ background: #e74c3c; color: white; }
+        .s-ann-client{ background: #e67e22; color: white; }
+
+        .btn-reset { padding: 8px 15px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        
+        /* Upload modal */
+        #upload-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+        .upload-modal { background: white; padding: 25px; border-radius: 12px; width: 380px; border-top: 8px solid #27ae60; text-align: center; }
+        .drop-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; margin: 15px 0; cursor: pointer; transition: 0.2s; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #27ae60; background: #f0fff4; }
+        .drop-zone input[type=file] { display: none; }
+        .file-list { text-align: left; font-size: 12px; max-height: 100px; overflow-y: auto; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #eee; }
+        
+        @media print { .btn-reset, .type-toggle, .status-bar-wrap, .goal-input, .delete-btn, .pin-btn, .legend-bar, .upload-btn { display: none !important; } }
+
+        /* ===== VUE COMPTABILITÉ PAULE ===== */
+        #paule-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .paule-modal { background: white; border-radius: 12px; width: 100%; max-width: 900px; border-top: 8px solid #27ae60; margin: auto; }
+        .paule-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid #eee; background: #f8fff8; border-radius: 12px 12px 0 0; }
+        .paule-filters { display: flex; gap: 10px; padding: 15px 25px; border-bottom: 1px solid #eee; flex-wrap: wrap; align-items: center; }
+        .paule-filter-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #eee; background: #f5f5f5; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .paule-filter-btn.active { background: #27ae60; color: white; border-color: #27ae60; }
+        .paule-filter-btn.f-livre { border-color: #f1c40f; }
+        .paule-filter-btn.f-livre.active { background: #f1c40f; color: #333; }
+        .paule-list { padding: 15px 25px; }
+        .paule-card { background: white; border: 1px solid #eee; border-radius: 8px; padding: 12px 15px; margin-bottom: 10px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); transition: 0.2s; }
+        .paule-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .paule-card.is-livre { border-left: 4px solid #f1c40f; }
+        .paule-card.is-compta { border-left: 4px solid #27ae60; opacity: 0.7; }
+        .paule-client { font-weight: bold; font-size: 14px; }
+        .paule-sub { font-size: 11px; color: #666; margin-top: 2px; }
+        .paule-profit { font-weight: bold; color: #27ae60; font-size: 15px; }
+        .paule-statut { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 10px; text-align: center; }
+        .paule-files { font-size: 11px; }
+        .btn-comptabiliser { padding: 8px 14px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .btn-comptabiliser:hover { background: #219a52; }
+        .btn-decomptabiliser { padding: 8px 14px; background: #95a5a6; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .paule-empty { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+        .paule-summary { display: flex; gap: 15px; padding: 15px 25px; background: #f8fff8; border-top: 1px solid #eee; border-radius: 0 0 12px 12px; flex-wrap: wrap; }
+        .paule-sum-item { text-align: center; }
+        .paule-sum-val { font-size: 20px; font-weight: bold; color: #27ae60; }
+        .paule-sum-lbl { font-size: 11px; color: #666; }
+
+        /* ===== GESTION REPRÉSENTANTS ===== */
+        #reps-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; }
+        .reps-modal { background: white; border-radius: 12px; width: 500px; border-top: 8px solid #c30a1e; padding: 25px; max-height: 80vh; overflow-y: auto; }
+        .rep-section-title { font-weight: bold; font-size: 12px; color: #fff; padding: 6px 10px; border-radius: 5px; margin: 12px 0 6px; }
+        .rep-list-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 5px; font-size: 13px; }
+        .rep-add-row { display: flex; gap: 8px; margin-top: 8px; }
+        .rep-add-row input { flex: 1; border: 1px solid #ccc; padding: 7px; border-radius: 4px; font-size: 13px; }
+        .btn-rep { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn-rep-add  { background: #27ae60; color: white; }
+        .btn-rep-del  { background: #e74c3c; color: white; font-size: 11px; padding: 4px 8px; }
+        .btn-rep-move { background: #eee; color: #333; font-size: 11px; padding: 4px 8px; }
+
+        /* ===== ARCHIVES ===== */
+        #archive-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .archive-modal { background: white; border-radius: 12px; width: 100%; max-width: 1400px; border-top: 8px solid #2c3e50; margin: auto; }
+        .archive-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid #eee; }
+        .archive-month-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 15px 25px; border-bottom: 1px solid #eee; }
+        .month-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #eee; background: #f5f5f5; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .month-btn:hover { border-color: #c30a1e; }
+        .month-btn.active { background: #c30a1e; color: white; border-color: #c30a1e; }
+        .archive-content { padding: 20px; overflow-x: auto; }
+        .archive-stats { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .arch-stat { background: #f8f9fa; padding: 10px 18px; border-radius: 8px; text-align: center; }
+        .arch-stat-val { font-size: 22px; font-weight: bold; color: #c30a1e; }
+        .arch-stat-lbl { font-size: 11px; color: #666; }
+        .btn-archive { padding: 8px 15px; background: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .btn-archive:hover { background: #1a252f; }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL DÉTAILS TRANSACTION -->
+    <div id="modal-overlay" onclick="if(event.target===this) closeModal()">
+        <div class="modal">
+            <h3 style="margin-top:0">Détails Transaction</h3>
+            <div class="modal-grid">
+                <div><label style="font-size:10px; font-weight:bold;">CLIENT</label><input type="text" id="m_client" oninput="saveDetail('c', this.value)"></div>
+                <div><label style="font-size:10px; font-weight:bold;">VILLE</label><input type="text" id="m_ville" oninput="saveDetail('v', this.value)"></div>
+                <div><label style="font-size:10px; font-weight:bold;">STOCK #</label><input type="text" id="m_stock" oninput="saveDetail('s', this.value)"></div>
+                <div><label style="font-size:10px; font-weight:bold;">MODÈLE</label><input type="text" id="m_modele" oninput="saveDetail('m', this.value)"></div>
+                <div><label style="font-size:10px; font-weight:bold;">DATE ARRIVÉE</label><input type="date" id="m_date" oninput="saveDetail('date', this.value)"></div>
+                <div><label style="font-size:10px; font-weight:bold;">PROFIT ($)</label><input type="number" id="m_profit" oninput="saveDetail('p', this.value)"></div>
+                <div style="grid-column: span 2; background:#f0f7ff; padding:10px; border-radius:4px;">
+                    <label style="font-size:10px; font-weight:bold;">🎛️ GROUPE D'OPTIONS</label>
+                    <textarea id="m_options" oninput="saveDetail('opt', this.value)" placeholder="Ex: GPS, Toit ouvrant, Caméra..."></textarea>
+                </div>
+                <div style="grid-column: span 2; background:#f0f7ff; padding:10px; border-radius:4px;">
+                    <label style="font-size:10px; font-weight:bold;">🛡️ GARANTIE ?</label>
+                    <select id="m_garantie" onchange="saveDetail('gar', this.value)">
+                        <option value="non">NON</option>
+                        <option value="oui">OUI ✅</option>
+                    </select>
+                </div>
+                <!-- STATUT VISUEL DANS LE MODAL -->
+                <div style="grid-column: span 2; background:#fff8e1; padding:10px; border-radius:4px;">
+                    <label style="font-size:10px; font-weight:bold; display:block; margin-bottom:6px;">📊 STATUT DE LA VENTE</label>
+                    <div class="statut-grid">
+                        <div class="statut-opt s-vide" data-statut="vide" onclick="setStatut('vide')">⬜ Vide</div>
+                        <div class="statut-opt s-vendu" data-statut="vendu" onclick="setStatut('vendu')">🔵 Vendu</div>
+                        <div class="statut-opt s-approuve" data-statut="approuve" onclick="setStatut('approuve')">🟡 Approuvé crédit</div>
+                        <div class="statut-opt s-livre" data-statut="livre" onclick="setStatut('livre')">🟡🟡 Livré</div>
+                        <div class="statut-opt s-compta" data-statut="comptabilise" onclick="setStatut('comptabilise')">🟢 Comptabilisé</div>
+                        <div class="statut-opt s-ann-credit" data-statut="annule-credit" onclick="setStatut('annule-credit')">🔴 Refus crédit</div>
+                        <div class="statut-opt s-ann-client" data-statut="annule-client" onclick="setStatut('annule-client')">🟠 Client annulé</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:20px; text-align:right;">
+                <button onclick="closeModal()" style="padding:10px 25px; background:#27ae60; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">ENREGISTRER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UPLOAD F&I -->
+    <div id="upload-overlay" onclick="if(event.target===this) closeUpload()">
+        <div class="upload-modal">
+            <h3 style="margin-top:0; color:#27ae60;">📎 Fichier F&I</h3>
+            <p style="font-size:12px; color:#666;" id="upload-label">Déposez le fichier pour cette transaction</p>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" multiple onchange="handleFiles(this.files)">
+                <div>📂 Cliquez ou glissez un fichier ici</div>
+                <div style="font-size:11px; color:#999; margin-top:5px;">PDF, Excel, Word, images...</div>
+            </div>
+            <div class="file-list" id="file-list"></div>
+            <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="closeUpload()" style="padding:8px 20px; background:#27ae60; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">FERMER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VUE COMPTABILITÉ PAULE -->
+    <div id="paule-overlay" onclick="if(event.target===this) closePaule()">
+        <div class="paule-modal">
+            <div class="paule-header">
+                <div>
+                    <h2 style="margin:0; color:#27ae60;">🧾 Comptabilité — Paule</h2>
+                    <div id="paule-subtitle" style="font-size:12px; color:#999; margin-top:3px;"></div>
+                </div>
+                <button onclick="closePaule()" style="padding:8px 20px; background:#c30a1e; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✕ FERMER</button>
+            </div>
+            <div class="paule-filters">
+                <span style="font-size:12px; font-weight:bold; color:#555;">AFFICHER :</span>
+                <button class="paule-filter-btn f-livre active" id="filter-livre" onclick="setPauleFilter('livre')">🟡 Livrés à comptabiliser</button>
+                <button class="paule-filter-btn" id="filter-compta" onclick="setPauleFilter('comptabilise')">🟢 Déjà comptabilisés</button>
+                <button class="paule-filter-btn" id="filter-tous" onclick="setPauleFilter('tous')">📋 Tous les dossiers</button>
+            </div>
+            <div class="paule-list" id="paule-list"></div>
+            <div class="paule-summary" id="paule-summary"></div>
+        </div>
+    </div>
+
+    <!-- MODAL GESTION REPRÉSENTANTS -->
+    <div id="reps-overlay" onclick="if(event.target===this) closeReps()">
+        <div class="reps-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">👥 Gestion des Représentants</h3>
+                <button onclick="closeReps()" style="padding:6px 15px; background:#c30a1e; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✕</button>
+            </div>
+
+            <div class="rep-section-title" style="background:#7f8c8d;">🚗 OCCASION</div>
+            <div id="list-used"></div>
+            <div class="rep-add-row">
+                <input type="text" id="new-used" placeholder="Nom du représentant...">
+                <button class="btn-rep btn-rep-add" onclick="addRep('used')">+ Ajouter</button>
+            </div>
+
+            <div class="rep-section-title" style="background:#3498db; margin-top:18px;">✨ NEUF</div>
+            <div id="list-new"></div>
+            <div class="rep-add-row">
+                <input type="text" id="new-neuf" placeholder="Nom du représentant...">
+                <button class="btn-rep btn-rep-add" onclick="addRep('neuf')">+ Ajouter</button>
+            </div>
+
+            <p style="font-size:11px; color:#e74c3c; margin-top:18px; background:#fff5f5; padding:10px; border-radius:5px;">
+                ⚠️ Supprimer un représentant efface ses données du board actuel. Les archives restent intactes.
+            </p>
+        </div>
+    </div>
+
+    <!-- MODAL ARCHIVES -->
+    <div id="archive-overlay" onclick="if(event.target===this) closeArchive()">
+        <div class="archive-modal">
+            <div class="archive-header">
+                <div>
+                    <h2 style="margin:0; color:#2c3e50;">📂 Archives — Nissan Brossard</h2>
+                    <div id="archive-current-label" style="font-size:13px; color:#999; margin-top:3px;"></div>
+                </div>
+                <button onclick="closeArchive()" style="padding:8px 20px; background:#c30a1e; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">✕ FERMER</button>
+            </div>
+            <div class="archive-month-selector" id="archive-month-list">
+                <span style="color:#999; font-size:12px;">Chargement des archives...</span>
+            </div>
+            <div class="archive-content">
+                <div class="archive-stats" id="archive-stats"></div>
+                <div id="archive-table-wrap" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-container">
+        <div class="dealer-name">NISSAN BROSSARD | BOARD DG v2.9</div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-archive" style="background:#27ae60;" onclick="openPaule()">🧾 COMPTABILITÉ</button>
+            <button class="btn-archive" onclick="openReps()">👥 REPRÉSENTANTS</button>
+            <button class="btn-archive" onclick="openArchive()">📂 ARCHIVES</button>
+            <button class="btn-reset" onclick="archiverEtReset()">📦 ARCHIVER & RESET</button>
+        </div>
+    </div>
+
+    <div class="top-stats">
+        <div class="stat-card"><div class="podium-title">🏆 TOP 3</div><div id="podium-list"></div></div>
+        
+        <div class="goals-wrapper">
+            <div class="goal-container">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; font-size:13px; color:#3498db">✨ NEUF: <span id="count-n">0</span></span>
+                    <input type="number" id="goal-n" value="50" class="goal-input" oninput="updateGoals()">
+                </div>
+                <div class="progress-bg"><div id="bar-n" class="progress-bar bar-neuf"></div></div>
+                <div id="pace-n" style="font-size:10px; color:#666">Pace: --</div>
+            </div>
+            <div class="goal-container">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; font-size:13px; color:#7f8c8d">🚗 USED: <span id="count-u">0</span></span>
+                    <input type="number" id="goal-u" value="50" class="goal-input" oninput="updateGoals()">
+                </div>
+                <div class="progress-bg"><div id="bar-u" class="progress-bar bar-use"></div></div>
+                <div id="pace-u" style="font-size:10px; color:#666">Pace: --</div>
+            </div>
+            <div class="goal-container" style="background:#9b59b6; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                <div style="font-weight:bold; font-size:11px">📌 EN ATTENTE (PIN)</div>
+                <div id="count-pin" style="font-size:22px; font-weight:bold;">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="podium-title">💰 PERFORMANCE</div>
+            <div style="text-align:center;">
+                <div id="total-profit" style="font-size:15px; font-weight:bold; color:#27ae60; display:none;">Total: $0</div>
+                <div id="avg-profit" style="font-size:13px; font-weight:bold; color:#e67e22; display:none; margin-top:3px;">Moy: $0</div>
+                <div id="gar-perc" style="font-size:13px; font-weight:bold; color:#3498db; margin-top:5px;">🛡️ GAR: 0%</div>
+                <button onclick="askProfitCode()" id="btn-show-profit" style="margin-top:5px; font-size:10px; cursor:pointer;">VOIR PROFIT</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend-bar">
+        <div class="leg-item"><div class="box" style="background:#eee; border:1px solid #ccc"></div> Vide</div>
+        <div class="leg-item"><div class="box" style="background:linear-gradient(to right, #3498db 50%, #eee 50%)"></div> Vendu</div>
+        <div class="leg-item"><div class="box" style="background:linear-gradient(to right, #f1c40f 50%, #eee 50%)"></div> Approuvé crédit</div>
+        <div class="leg-item"><div class="box" style="background:#f1c40f"></div> Livré</div>
+        <div class="leg-item"><div class="box" style="background:#27ae60"></div> Comptabilisé</div>
+        <div class="leg-item"><div class="box" style="background:#e74c3c"></div> Refus crédit</div>
+        <div class="leg-item"><div class="box" style="background:#e67e22"></div> Client annulé</div>
+        <div class="leg-item"><div class="box" style="background:#9b59b6"></div> Pinné</div>
+        <div class="leg-item"><div class="box" style="background:#3498db"></div> NEUF</div>
+        <div class="leg-item"><div class="box" style="background:#95a5a6"></div> USED</div>
+        <div class="leg-item"><div class="box" style="background:#2c3e50"></div> CSV</div>
+        <div class="leg-item"><div class="box" style="background:#e67e22"></div> COMMANDE (Hors-Total)</div>
+        <div class="leg-item">🛡️ GAR</div>
+        <div class="leg-item">📎 F&I</div>
+        <div class="leg-item">🗑️ SUPP</div>
+    </div>
+
+    <div class="container">
+        <table>
+            <thead><tr><th class="rep-col">REPRÉSENTANT</th><script>for(let i=1; i<=31; i++) document.write(`<th>${i}</th>`);</script></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // ===== MOT DE PASSE =====
+        const APP_PASSWORD = "nissan2025"; // ← Change ce mot de passe ici
+
+        function checkLogin() {
+            const pwd = document.getElementById('login-pwd').value;
+            if (pwd === APP_PASSWORD) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                sessionStorage.setItem('nb_auth', '1');
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('login-pwd').value = '';
+                document.getElementById('login-pwd').focus();
+                setTimeout(() => document.getElementById('login-error').style.display = 'none', 2500);
+            }
+        }
+
+        // Vérifie si déjà connecté dans cette session
+        if (sessionStorage.getItem('nb_auth') === '1') {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+        }
+
+        const firebaseConfig = {
+            databaseURL: "https://board-vente-nissan-brossard-default-rtdb.firebaseio.com",
+            storageBucket: "board-vente-nissan-brossard.firebasestorage.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db      = firebase.database();
+        const storage = firebase.storage();
+
+        let repsUsed = ["Dikran", "Riadh", "PO"];
+        let repsNew  = ["Alfredo", "Mohammed", "Youssef", "Cedrick"];
+        let currentId = "";
+        const DG_CODE = "1234";
+
+        // ===== CHARGEMENT DYNAMIQUE DES REPS depuis Firebase =====
+        function initReps(cb) {
+            db.ref('config/reps').once('value', snap => {
+                const d = snap.val();
+                if (d) {
+                    if (d.used) repsUsed = d.used;
+                    if (d.neuf) repsNew  = d.neuf;
+                }
+                cb();
+            });
+        }
+
+        function saveReps() {
+            db.ref('config/reps').set({ used: repsUsed, neuf: repsNew });
+        }
+
+        // ===== UPLOAD — Firebase Storage (partagé avec tout le monde) =====
+        let currentUploadId = "";
+
+        function openUpload(e, id) {
+            e.stopPropagation();
+            currentUploadId = id;
+            document.getElementById('upload-label').innerText = `Fichier F&I — ${id}`;
+            renderFileList();
+            document.getElementById('upload-overlay').style.display = 'flex';
+        }
+        function closeUpload() { document.getElementById('upload-overlay').style.display = 'none'; }
+
+        function handleFiles(files) {
+            const el = document.getElementById('file-list');
+            Array.from(files).forEach(f => {
+                const path = `fi/${currentUploadId}/${Date.now()}_${f.name}`;
+                const ref  = storage.ref(path);
+                const task = ref.put(f);
+
+                const progId = 'prog_' + Date.now();
+                el.insertAdjacentHTML('beforeend',
+                    `<div id="${progId}" class="file-item" style="flex-direction:column; align-items:flex-start;">
+                        <span style="font-size:11px;">⏳ ${f.name}</span>
+                        <progress value="0" max="100" style="width:100%; height:6px;"></progress>
+                    </div>`
+                );
+
+                task.on('state_changed',
+                    snap => {
+                        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                        const el2 = document.getElementById(progId);
+                        if (el2) el2.querySelector('progress').value = pct;
+                    },
+                    err => { console.error(err); alert('Erreur upload: ' + err.message); },
+                    () => {
+                        task.snapshot.ref.getDownloadURL().then(url => {
+                            db.ref(`fichiers/${currentUploadId}`).push({
+                                name: f.name,
+                                url:  url,
+                                path: path,
+                                date: new Date().toLocaleDateString('fr-CA')
+                            });
+                        });
+                    }
+                );
+            });
+        }
+
+        function renderFileList() {
+            const el = document.getElementById('file-list');
+            el.innerHTML = '<p style="color:#999; font-size:11px; text-align:center;">Chargement...</p>';
+            db.ref(`fichiers/${currentUploadId}`).once('value', snap => {
+                const data = snap.val();
+                if (!data) {
+                    el.innerHTML = '<p style="color:#999; font-size:11px; text-align:center;">Aucun fichier</p>';
+                    return;
+                }
+                el.innerHTML = Object.entries(data).map(([key, f]) =>
+                    `<div class="file-item">
+                        <span onclick="window.open('${f.url}','_blank')" style="cursor:pointer; color:#2980b9; text-decoration:underline; flex:1;" title="Ouvrir">
+                            📄 ${f.name} <span style="color:#999; font-size:10px;">(${f.date})</span>
+                        </span>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <a href="${f.url}" download="${f.name}" title="Télécharger" style="font-size:14px; text-decoration:none;">⬇️</a>
+                            <span onclick="removeFile('${key}','${f.path}')" style="cursor:pointer; color:#e74c3c; font-size:13px;">✕</span>
+                        </div>
+                    </div>`
+                ).join('');
+            });
+        }
+
+        function removeFile(key, path) {
+            if (!confirm('Supprimer ce fichier ?')) return;
+            storage.ref(path).delete().catch(() => {});
+            db.ref(`fichiers/${currentUploadId}/${key}`).remove();
+            setTimeout(renderFileList, 600);
+        }
+
+        // Écoute les fichiers en temps réel → met à jour les badges 📎 pour tout le monde
+        db.ref('fichiers').on('value', snap => {
+            const data = snap.val() || {};
+            document.querySelectorAll('.upload-btn').forEach(btn => {
+                const id    = btn.id.replace('up_', '');
+                const count = data[id] ? Object.keys(data[id]).length : 0;
+                btn.classList.toggle('has-file', count > 0);
+                btn.title = count > 0 ? `${count} fichier(s) F&I — cliquer pour ouvrir` : 'Ajouter fichier F&I';
+            });
+            if (document.getElementById('upload-overlay').style.display === 'flex') {
+                renderFileList();
+            }
+        });
+
+        // Drop zone
+        const dz = document.getElementById('drop-zone');
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+        dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+        // ===== PROFIT CODE =====
+        function askProfitCode() {
+            if (prompt("Code DG :") === DG_CODE) {
+                document.getElementById('total-profit').style.display = 'block';
+                document.getElementById('avg-profit').style.display = 'block';
+                document.getElementById('btn-show-profit').style.display = 'none';
+            }
+        }
+
+        function deleteSale(id) { if(confirm("Supprimer ?")) db.ref('ventes/' + id).remove(); }
+
+        function togglePin(id) {
+            db.ref('ventes/' + id + '/pin').once('value', (snap) => {
+                db.ref('ventes/' + id).update({ pin: !snap.val() });
+            });
+        }
+
+        // ===== GÉNÉRATION DU TABLEAU =====
+        function addSection(title, list) {
+            let row = `<tr><td colspan="32" style="background:#2c3e50; color:white; font-weight:bold; padding:6px; font-size:11px">${title}</td></tr>`;
+            list.forEach(name => {
+                row += `<tr><td class="rep-col">${name}</td>`;
+                for (let j = 1; j <= 31; j++) {
+                    row += `<td>`;
+                    for (let k = 1; k <= 3; k++) {
+                        let id = `${name.replace(/\s/g, '')}_${j}_${k}`;
+                        row += `<div class="sale-block" id="block_${id}" onclick="openModal('${id}', '${name}', ${j})">
+                                    <div class="delete-btn" onclick="event.stopPropagation(); deleteSale('${id}')">🗑️</div>
+                                    <div class="pin-btn" onclick="event.stopPropagation(); togglePin('${id}')">📌</div>
+                                    <div class="type-toggle" id="t_${id}" onclick="event.stopPropagation(); toggleType('${id}')">?</div>
+                                    <div class="info-display client-name" id="disp_c_${id}"></div>
+                                    <div class="info-display city-display" id="disp_v_${id}"></div>
+                                    <div class="info-display" id="disp_s_${id}"></div>
+                                    <div class="status-bar-wrap" id="bar_wrap_${id}">
+                                        <div class="status-seg seg-left"  id="seg_l_${id}"></div>
+                                        <div class="status-seg seg-right" id="seg_r_${id}"></div>
+                                    </div>
+                                    <div class="upload-btn" id="up_${id}" onclick="event.stopPropagation(); openUpload(event, '${id}')" title="Ajouter fichier F&I">📎</div>
+                                </div>`;
+                    }
+                    row += `</td>`;
+                }
+                row += `</tr>`;
+            });
+            document.getElementById('tableBody').innerHTML += row;
+        }
+        // Construit le tableau immédiatement avec les reps par défaut
+        // puis Firebase met à jour si des reps personnalisés existent
+        function buildTable() {
+            document.getElementById('tableBody').innerHTML = '';
+            addSection("OCCASION", repsUsed);
+            addSection("NEUF",     repsNew);
+        }
+
+        // Charge les reps depuis Firebase (avec timeout de sécurité)
+        let tableBuilt = false;
+        const safetyTimeout = setTimeout(() => {
+            if (!tableBuilt) { tableBuilt = true; buildTable(); }
+        }, 3000); // si Firebase ne répond pas en 3sec, on charge quand même
+
+        db.ref('config/reps').once('value', snap => {
+            clearTimeout(safetyTimeout);
+            const d = snap.val();
+            if (d) {
+                if (d.used) repsUsed = d.used;
+                if (d.neuf) repsNew  = d.neuf;
+            }
+            if (!tableBuilt) { tableBuilt = true; buildTable(); }
+        }).catch(() => {
+            if (!tableBuilt) { tableBuilt = true; buildTable(); }
+        });
+
+
+
+
+        // ===== MODAL =====
+        function openModal(id, rep, jour) {
+            currentId = id;
+            db.ref('ventes/' + id).once('value', (snap) => {
+                const d = snap.val() || {};
+                document.getElementById('m_client').value   = d.c    || "";
+                document.getElementById('m_ville').value    = d.v    || "";
+                document.getElementById('m_stock').value    = d.s    || "";
+                document.getElementById('m_modele').value   = d.m    || "";
+                document.getElementById('m_date').value     = d.date || "";
+                document.getElementById('m_profit').value   = d.p    || "";
+                document.getElementById('m_garantie').value = d.gar  || "non";
+                document.getElementById('m_options').value  = d.opt  || "";
+                highlightStatut(d.b || "vide");
+            });
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+        function saveDetail(type, val) {
+            db.ref('ventes/' + currentId).update({ [type]: val });
+            // Si on entre un nom de client et que le statut est vide → passe automatiquement à Vendu
+            if (type === 'c' && val.trim() !== '') {
+                db.ref('ventes/' + currentId + '/b').once('value', snap => {
+                    if (!snap.val() || snap.val() === 'vide') {
+                        db.ref('ventes/' + currentId).update({ b: 'vendu' });
+                        highlightStatut('vendu');
+                    }
+                });
+            }
+        }
+
+        // ===== STATUT =====
+        function setStatut(statut) {
+            db.ref('ventes/' + currentId).update({ b: statut });
+            highlightStatut(statut);
+        }
+
+        function highlightStatut(statut) {
+            document.querySelectorAll('.statut-opt').forEach(el => el.classList.remove('active'));
+            const active = document.querySelector(`.statut-opt[data-statut="${statut}"]`);
+            if (active) active.classList.add('active');
+        }
+
+        function applyStatutBar(id, statut) {
+            const segL = document.getElementById('seg_l_' + id);
+            const segR = document.getElementById('seg_r_' + id);
+            if (!segL || !segR) return;
+            // Reset
+            segL.className = 'status-seg seg-left';
+            segR.className = 'status-seg seg-right';
+            if (statut === 'vendu') {
+                segL.classList.add('vendu');
+            } else if (statut === 'approuve') {
+                segL.classList.add('approuve');
+            } else if (statut === 'livre') {
+                segL.classList.add('livre');
+                segR.classList.add('livre');
+            } else if (statut === 'comptabilise') {
+                segL.classList.add('comptabilise');
+                segR.classList.add('comptabilise');
+            } else if (statut === 'annule-credit') {
+                segL.classList.add('annule-credit');
+                segR.classList.add('annule-credit');
+            } else if (statut === 'annule-client') {
+                segL.classList.add('annule-client');
+                segR.classList.add('annule-client');
+            }
+        }
+
+        // ===== TYPE TOGGLE =====
+        function toggleType(id) {
+            const el = document.getElementById('t_' + id);
+            let next = (el.innerText === "?")   ? "N"   :
+                       (el.innerText === "N")    ? "U"   :
+                       (el.innerText === "U")    ? "C"   :
+                       (el.innerText === "C")    ? "CMD" : "?";
+            db.ref('ventes/' + id).update({ t: next });
+        }
+
+        // ===== FIREBASE LISTENER =====
+        db.ref('ventes').on('value', (snap) => {
+            const data = snap.val() || {};
+            let cN = 0, cU = 0, totalProfit = 0, profitCount = 0, totalPin = 0, cGar = 0, rankings = {};
+
+            document.querySelectorAll('.info-display').forEach(el => el.innerText = "");
+            document.querySelectorAll('.sale-block').forEach(el => el.classList.remove('is-pinned'));
+            // Reset all bars
+            document.querySelectorAll('.status-seg').forEach(el => { el.className = el.className.replace(/vendu|approuve|livre|comptabilise|annule-credit|annule-client/g, '').trim(); });
+
+            for (let id in data) {
+                const v = data[id];
+                const rep = id.split('_')[0];
+                const block = document.getElementById('block_' + id);
+
+                if (block) {
+                    if (v.pin) { block.classList.add('is-pinned'); totalPin++; }
+
+                    document.getElementById('disp_c_' + id).innerText = (v.gar === "oui" ? "🛡️ " : "") + (v.c || "");
+                    document.getElementById('disp_v_' + id).innerText = v.v || "";
+                    document.getElementById('disp_s_' + id).innerText = v.s || "";
+
+                    applyStatutBar(id, v.b || "vide");
+
+                    // Comptage: comptabilisé = vendu officiel, exclut CMD
+                    const estVendu = (v.b === 'comptabilise' || v.b === 'livre' || v.b === 'approuve' || v.b === 'vendu');
+                    if (estVendu && v.t !== "CMD") {
+                        if (v.t === "N") cN++;
+                        else if (v.t === "U") cU++;
+                        if (v.gar === "oui") cGar++;
+                        if (v.t !== "C") {
+                            const p = parseInt(v.p || 0);
+                            totalProfit += p;
+                            if (p > 0) profitCount++;
+                            rankings[rep] = (rankings[rep] || 0) + 1;
+                        }
+                    }
+
+                    const t = document.getElementById('t_' + id);
+                    t.innerText = v.t || "?";
+                    t.className = "type-toggle " +
+                        (v.t === "N"   ? "type-n"   :
+                         v.t === "U"   ? "type-u"   :
+                         v.t === "C"   ? "type-csv" :
+                         v.t === "CMD" ? "type-cmd" : "");
+                }
+            }
+
+            document.getElementById('count-pin').innerText = totalPin;
+            const totalSales = cN + cU;
+            const garPerc = totalSales > 0 ? Math.round((cGar / totalSales) * 100) : 0;
+            document.getElementById('gar-perc').innerText = `🛡️ GAR: ${garPerc}%`;
+
+            updateUI(cN, cU, totalProfit, profitCount, rankings);
+        });
+
+        function updateUI(cN, cU, profit, profitCount, ranks) {
+            const day = new Date().getDate();
+            const gN  = document.getElementById('goal-n').value || 1;
+            const gU  = document.getElementById('goal-u').value || 1;
+            document.getElementById('bar-n').style.width = Math.min((cN / gN) * 100, 100) + "%";
+            document.getElementById('bar-u').style.width = Math.min((cU / gU) * 100, 100) + "%";
+            document.getElementById('count-n').innerText = cN;
+            document.getElementById('count-u').innerText = cU;
+
+            const avg = profitCount > 0 ? Math.round(profit / profitCount) : 0;
+            document.getElementById('total-profit').innerText = `Total: $${profit.toLocaleString()}`;
+            document.getElementById('avg-profit').innerText   = `Moy/vente: $${avg.toLocaleString()}`;
+
+            document.getElementById('pace-n').innerText = `Pace: ${Math.round((cN / day) * 30)}`;
+            document.getElementById('pace-u').innerText = `Pace: ${Math.round((cU / day) * 30)}`;
+
+            const sorted = Object.entries(ranks).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            let h = "";
+            sorted.forEach(([n, c], i) => { h += `<div class="podium-item"><span>${i + 1}. ${n}</span><strong>${c}</strong></div>`; });
+            document.getElementById('podium-list').innerHTML = h || "Aucune vente";
+        }
+
+        function updateGoals() {
+            db.ref('config').update({ gn: document.getElementById('goal-n').value, gu: document.getElementById('goal-u').value });
+        }
+        db.ref('config').on('value', (snap) => {
+            const d = snap.val();
+            if (d) {
+                if (d.gn) document.getElementById('goal-n').value = d.gn;
+                if (d.gu) document.getElementById('goal-u').value = d.gu;
+            }
+        });
+
+        // ===== VUE COMPTABILITÉ PAULE =====
+        let pauleFilter = 'livre';
+
+        function openPaule() {
+            pauleFilter = 'livre';
+            updatePauleFilterBtns();
+            document.getElementById('paule-overlay').style.display = 'flex';
+            renderPauleList();
+        }
+        function closePaule() {
+            document.getElementById('paule-overlay').style.display = 'none';
+        }
+
+        function setPauleFilter(filter) {
+            pauleFilter = filter;
+            updatePauleFilterBtns();
+            renderPauleList();
+        }
+
+        function updatePauleFilterBtns() {
+            document.querySelectorAll('.paule-filter-btn').forEach(b => b.classList.remove('active'));
+            const map = { livre: 'filter-livre', comptabilise: 'filter-compta', tous: 'filter-tous' };
+            const btn = document.getElementById(map[pauleFilter]);
+            if (btn) btn.classList.add('active');
+        }
+
+        function renderPauleList() {
+            const listEl = document.getElementById('paule-list');
+            listEl.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">Chargement...</p>';
+
+            Promise.all([
+                db.ref('ventes').once('value'),
+                db.ref('fichiers').once('value')
+            ]).then(([ventesSnap, fichiersSnap]) => {
+                const ventes   = ventesSnap.val()   || {};
+                const fichiers = fichiersSnap.val() || {};
+
+                // Filtre les dossiers selon le filtre actif
+                let dossiers = [];
+                for (let id in ventes) {
+                    const v = ventes[id];
+                    if (!v.c) continue; // ignore les blocs vides
+                    if (pauleFilter === 'tous' || v.b === pauleFilter) {
+                        const rep = id.split('_')[0];
+                        const files = fichiers[id] ? Object.entries(fichiers[id]) : [];
+                        dossiers.push({ id, rep, files, ...v });
+                    }
+                }
+
+                // Trie: livrés en premier, puis par rep
+                dossiers.sort((a, b) => {
+                    if (a.b === 'livre' && b.b !== 'livre') return -1;
+                    if (b.b === 'livre' && a.b !== 'livre') return 1;
+                    return (a.rep || '').localeCompare(b.rep || '');
+                });
+
+                if (dossiers.length === 0) {
+                    listEl.innerHTML = '<div class="paule-empty">✅ Aucun dossier à afficher pour ce filtre.</div>';
+                    document.getElementById('paule-summary').innerHTML = '';
+                    document.getElementById('paule-subtitle').innerText = '0 dossier';
+                    return;
+                }
+
+                document.getElementById('paule-subtitle').innerText = `${dossiers.length} dossier${dossiers.length > 1 ? 's' : ''}`;
+
+                listEl.innerHTML = dossiers.map(d => {
+                    const statutLabel = d.b === 'livre' ? '🟡 Livré' : d.b === 'comptabilise' ? '🟢 Comptabilisé' : d.b === 'approuve' ? '🟡 Approuvé' : d.b === 'vendu' ? '🔵 Vendu' : d.b || '—';
+                    const statutColor = d.b === 'livre' ? '#f1c40f' : d.b === 'comptabilise' ? '#27ae60' : d.b === 'approuve' ? '#f39c12' : d.b === 'vendu' ? '#3498db' : '#eee';
+                    const profitHtml  = d.p ? `<div class="paule-profit">$${parseInt(d.p).toLocaleString()}</div>` : `<div style="color:#ccc; font-size:12px;">—</div>`;
+                    const filesHtml   = d.files.length > 0
+                        ? d.files.map(([k, f]) => `<a href="${f.url}" target="_blank" style="display:block; color:#2980b9; text-decoration:none; font-size:11px; margin-bottom:2px;">📎 ${f.name}</a>`).join('')
+                        : `<span style="color:#e74c3c; font-size:11px;">⚠️ Aucun fichier</span>`;
+                    const actionBtn   = d.b === 'livre'
+                        ? `<button class="btn-comptabiliser" onclick="marquerComptabilise('${d.id}')">✅ Comptabiliser</button>`
+                        : d.b === 'comptabilise'
+                        ? `<button class="btn-decomptabiliser" onclick="demarquerComptabilise('${d.id}')">↩️ Annuler</button>`
+                        : `<span style="font-size:11px; color:#999;">—</span>`;
+
+                    return `<div class="paule-card ${d.b === 'livre' ? 'is-livre' : d.b === 'comptabilise' ? 'is-compta' : ''}">
+                        <div>
+                            <div class="paule-client">${d.gar === 'oui' ? '🛡️ ' : ''}${d.c || ''}</div>
+                            <div class="paule-sub">${d.rep} · ${d.v || ''} · ${d.m || ''}</div>
+                            <div class="paule-sub">Stock: ${d.s || '—'} · ${d.opt ? '🎛️ ' + d.opt.substring(0,40) : ''}</div>
+                        </div>
+                        <div>${profitHtml}<div style="font-size:10px; color:#999; margin-top:2px;">${d.t || '?'} · Gar: ${d.gar === 'oui' ? '✅' : '❌'}</div></div>
+                        <div><span class="paule-statut" style="background:${statutColor}; color:${d.b === 'livre' ? '#333' : 'white'}">${statutLabel}</span></div>
+                        <div class="paule-files">${filesHtml}</div>
+                        <div>${actionBtn}</div>
+                    </div>`;
+                }).join('');
+
+                // Résumé en bas
+                const totalProfit = dossiers.reduce((s, d) => s + parseInt(d.p || 0), 0);
+                const nbLivre     = dossiers.filter(d => d.b === 'livre').length;
+                const nbCompta    = dossiers.filter(d => d.b === 'comptabilise').length;
+                const nbSansFich  = dossiers.filter(d => d.files.length === 0).length;
+
+                document.getElementById('paule-summary').innerHTML = `
+                    <div class="paule-sum-item"><div class="paule-sum-val" style="color:#f1c40f;">${nbLivre}</div><div class="paule-sum-lbl">À comptabiliser</div></div>
+                    <div class="paule-sum-item"><div class="paule-sum-val">${nbCompta}</div><div class="paule-sum-lbl">Comptabilisés</div></div>
+                    <div class="paule-sum-item"><div class="paule-sum-val" style="color:#27ae60;">$${totalProfit.toLocaleString()}</div><div class="paule-sum-lbl">Profit total affiché</div></div>
+                    <div class="paule-sum-item"><div class="paule-sum-val" style="color:${nbSansFich > 0 ? '#e74c3c' : '#27ae60'};">${nbSansFich}</div><div class="paule-sum-lbl">⚠️ Sans fichier F&I</div></div>`;
+            });
+        }
+
+        function marquerComptabilise(id) {
+            db.ref('ventes/' + id).update({ b: 'comptabilise' });
+            setTimeout(renderPauleList, 400);
+        }
+        function demarquerComptabilise(id) {
+            db.ref('ventes/' + id).update({ b: 'livre' });
+            setTimeout(renderPauleList, 400);
+        }
+
+        // ===== GESTION REPRÉSENTANTS =====
+        function openReps() {
+            renderRepLists();
+            document.getElementById('reps-overlay').style.display = 'flex';
+        }
+        function closeReps() {
+            document.getElementById('reps-overlay').style.display = 'none';
+        }
+
+        function renderRepLists() {
+            renderRepList('list-used', repsUsed, 'used');
+            renderRepList('list-new',  repsNew,  'neuf');
+        }
+
+        function renderRepList(elId, list, type) {
+            const el = document.getElementById(elId);
+            if (list.length === 0) {
+                el.innerHTML = '<p style="color:#999; font-size:12px; padding:5px;">Aucun représentant</p>';
+                return;
+            }
+            el.innerHTML = list.map((name, i) =>
+                `<div class="rep-list-item">
+                    <span>${name}</span>
+                    <div style="display:flex; gap:5px;">
+                        ${i > 0 ? `<button class="btn-rep btn-rep-move" onclick="moveRep('${type}',${i},-1)">▲</button>` : ''}
+                        ${i < list.length-1 ? `<button class="btn-rep btn-rep-move" onclick="moveRep('${type}',${i},1)">▼</button>` : ''}
+                        <button class="btn-rep btn-rep-del" onclick="deleteRep('${type}',${i},'${name}')">🗑️ Retirer</button>
+                    </div>
+                </div>`
+            ).join('');
+        }
+
+        function addRep(type) {
+            const inputId = type === 'used' ? 'new-used' : 'new-neuf';
+            const input   = document.getElementById(inputId);
+            const name    = input.value.trim();
+            if (!name) return;
+            const list = type === 'used' ? repsUsed : repsNew;
+            if (list.includes(name)) { alert('Ce représentant existe déjà !'); return; }
+            list.push(name);
+            saveReps();
+            input.value = '';
+            renderRepLists();
+            rebuildTable();
+        }
+
+        function deleteRep(type, idx, name) {
+            if (!confirm(`Retirer ${name} du board actuel ?\nSes données seront effacées. Les archives restent intactes.`)) return;
+            const list = type === 'used' ? repsUsed : repsNew;
+            list.splice(idx, 1);
+            saveReps();
+            // Efface ses ventes du board actuel
+            db.ref('ventes').once('value', snap => {
+                const data = snap.val() || {};
+                const updates = {};
+                for (let id in data) {
+                    if (id.startsWith(name.replace(/\s/g, ''))) updates[id] = null;
+                }
+                if (Object.keys(updates).length > 0) db.ref('ventes').update(updates);
+            });
+            renderRepLists();
+            rebuildTable();
+        }
+
+        function moveRep(type, idx, dir) {
+            const list = type === 'used' ? repsUsed : repsNew;
+            const newIdx = idx + dir;
+            if (newIdx < 0 || newIdx >= list.length) return;
+            [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
+            saveReps();
+            renderRepLists();
+            rebuildTable();
+        }
+
+        function rebuildTable() {
+            document.getElementById('tableBody').innerHTML = '';
+            addSection("OCCASION", repsUsed);
+            addSection("NEUF",     repsNew);
+            // Reforce Firebase listener to repopulate data
+            db.ref('ventes').once('value', snap => {
+                const data = snap.val() || {};
+                for (let id in data) {
+                    const v = data[id];
+                    const block = document.getElementById('block_' + id);
+                    if (block) {
+                        if (v.pin) block.classList.add('is-pinned');
+                        document.getElementById('disp_c_' + id).innerText = (v.gar === "oui" ? "🛡️ " : "") + (v.c || "");
+                        document.getElementById('disp_v_' + id).innerText = v.v || "";
+                        document.getElementById('disp_s_' + id).innerText = v.s || "";
+                        applyStatutBar(id, v.b || "vide");
+                        const t = document.getElementById('t_' + id);
+                        if (t) {
+                            t.innerText = v.t || "?";
+                            t.className = "type-toggle " + (v.t === "N" ? "type-n" : v.t === "U" ? "type-u" : v.t === "C" ? "type-csv" : v.t === "CMD" ? "type-cmd" : "");
+                        }
+                    }
+                }
+            });
+        }
+
+        // ===== ARCHIVAGE =====
+        const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+        function getMonthKey() {
+            // Prend le mois PRÉCÉDENT — car on archive toujours le mois qui vient de se terminer
+            const d = new Date();
+            d.setMonth(d.getMonth() - 1);
+            return `${MOIS_FR[d.getMonth()]}_${d.getFullYear()}`;
+        }
+        function getMonthLabel(key) {
+            return key.replace('_', ' ');
+        }
+
+        function archiverEtReset() {
+            const key = getMonthKey();
+            if (!confirm(`Archiver ${getMonthLabel(key)} et effacer le board ?\nLes données seront conservées dans les archives.`)) return;
+
+            // Charge les ventes ET les fichiers F&I en parallèle
+            Promise.all([
+                db.ref('ventes').once('value'),
+                db.ref('fichiers').once('value')
+            ]).then(([ventesSnap, fichiersSnap]) => {
+                const ventes   = ventesSnap.val();
+                const fichiers = fichiersSnap.val() || {};
+
+                if (!ventes) { db.ref('ventes').remove(); return; }
+
+                // Sauvegarde tout dans archives/MOIS_ANNEE
+                db.ref(`archives/${key}`).set({
+                    data:      ventes,
+                    fichiers:  fichiers,
+                    archivedAt: new Date().toISOString(),
+                    label:     getMonthLabel(key)
+                }).then(() => {
+                    db.ref('ventes').remove();
+                    // On garde les fichiers dans Storage mais on vide la liste active
+                    db.ref('fichiers').remove();
+                    alert(`✅ ${getMonthLabel(key)} archivé avec succès !\nTous les fichiers F&I sont conservés dans les archives.`);
+                });
+            });
+        }
+
+        // ===== VUE ARCHIVES =====
+        let currentArchiveKey = null;
+
+        function openArchive() {
+            document.getElementById('archive-overlay').style.display = 'flex';
+            loadArchiveList();
+        }
+        function closeArchive() {
+            document.getElementById('archive-overlay').style.display = 'none';
+        }
+
+        function loadArchiveList() {
+            const listEl = document.getElementById('archive-month-list');
+            db.ref('archives').once('value', snap => {
+                const data = snap.val();
+                if (!data) {
+                    listEl.innerHTML = '<span style="color:#999; font-size:12px;">Aucune archive disponible.</span>';
+                    return;
+                }
+                const keys = Object.keys(data).reverse(); // plus récent en premier
+                listEl.innerHTML = keys.map(k =>
+                    `<button class="month-btn" id="mbtn_${k}" onclick="loadArchiveMonth('${k}')">${getMonthLabel(k)}</button>`
+                ).join('');
+                // Charge le premier automatiquement
+                if (keys.length > 0) loadArchiveMonth(keys[0]);
+            });
+        }
+
+        function loadArchiveMonth(key) {
+            // Highlight bouton actif
+            document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('mbtn_' + key);
+            if (btn) btn.classList.add('active');
+            currentArchiveKey = key;
+            document.getElementById('archive-current-label').innerText = `Consultation : ${getMonthLabel(key)}`;
+
+            db.ref(`archives/${key}`).once('value', snap => {
+                const archive  = snap.val() || {};
+                const data     = archive.data     || {};
+                const fichiers = archive.fichiers || {};
+                renderArchiveTable(data, fichiers, key);
+                renderArchiveStats(data);
+            });
+        }
+
+        function renderArchiveStats(data) {
+            let cN = 0, cU = 0, totalProfit = 0, profitCount = 0, cGar = 0, rankings = {};
+            for (let id in data) {
+                const v = data[id];
+                const rep = id.split('_')[0];
+                const estVendu = (v.b === 'comptabilise' || v.b === 'livre' || v.b === 'approuve' || v.b === 'vendu');
+                if (estVendu && v.t !== "CMD") {
+                    if (v.t === "N") cN++;
+                    else if (v.t === "U") cU++;
+                    if (v.gar === "oui") cGar++;
+                    if (v.t !== "C") {
+                        const p = parseInt(v.p || 0);
+                        totalProfit += p;
+                        if (p > 0) profitCount++;
+                        rankings[rep] = (rankings[rep] || 0) + 1;
+                    }
+                }
+            }
+            const avg = profitCount > 0 ? Math.round(totalProfit / profitCount) : 0;
+            const garPerc = (cN+cU) > 0 ? Math.round((cGar/(cN+cU))*100) : 0;
+            const top = Object.entries(rankings).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+            document.getElementById('archive-stats').innerHTML = `
+                <div class="arch-stat"><div class="arch-stat-val" style="color:#3498db">${cN}</div><div class="arch-stat-lbl">✨ NEUF</div></div>
+                <div class="arch-stat"><div class="arch-stat-val" style="color:#7f8c8d">${cU}</div><div class="arch-stat-lbl">🚗 USED</div></div>
+                <div class="arch-stat"><div class="arch-stat-val" style="color:#27ae60">$${totalProfit.toLocaleString()}</div><div class="arch-stat-lbl">💰 PROFIT TOTAL</div></div>
+                <div class="arch-stat"><div class="arch-stat-val" style="color:#e67e22">$${avg.toLocaleString()}</div><div class="arch-stat-lbl">📊 MOY/VENTE</div></div>
+                <div class="arch-stat"><div class="arch-stat-val" style="color:#3498db">${garPerc}%</div><div class="arch-stat-lbl">🛡️ GARANTIE</div></div>
+                <div class="arch-stat" style="flex:1; min-width:200px;">
+                    <div style="font-size:11px; font-weight:bold; color:#c30a1e; margin-bottom:5px;">🏆 TOP 3</div>
+                    ${top.map(([n,c],i)=>`<div style="font-size:12px;">${i+1}. ${n} — <strong>${c} ventes</strong></div>`).join('')}
+                </div>`;
+        }
+
+        function renderArchiveTable(data, fichiers, key) {
+            const allReps = [...repsUsed, ...repsNew];
+            let html = `<table style="border-collapse:collapse; min-width:3100px; table-layout:fixed;">
+                <thead><tr>
+                    <th style="background:#2c3e50; color:white; padding:8px; font-size:11px; width:160px; text-align:left; padding-left:10px; position:sticky; left:0; z-index:11;">REPRÉSENTANT</th>`;
+            for (let i = 1; i <= 31; i++) html += `<th style="background:#2c3e50; color:white; padding:8px; font-size:11px; width:115px;">${i}</th>`;
+            html += `</tr></thead><tbody>`;
+
+            ['OCCASION', 'NEUF'].forEach(section => {
+                const list = section === 'OCCASION' ? repsUsed : repsNew;
+                html += `<tr><td colspan="32" style="background:#34495e; color:white; font-weight:bold; padding:6px; font-size:11px;">${section}</td></tr>`;
+                list.forEach(name => {
+                    html += `<tr><td style="background:#f8f9fa; font-weight:bold; border-right:4px solid #2c3e50; text-align:left; padding-left:10px; font-size:12px; position:sticky; left:0; z-index:5; border:1px solid #dee2e6;">${name}</td>`;
+                    for (let j = 1; j <= 31; j++) {
+                        html += `<td style="border:1px solid #dee2e6; vertical-align:top; padding:2px;">`;
+                        for (let k = 1; k <= 3; k++) {
+                            const id = `${name.replace(/\s/g, '')}_${j}_${k}`;
+                            const v = data[id];
+                            if (v && (v.c || v.b)) {
+                                const statutColor = v.b === 'comptabilise' ? '#27ae60' : v.b === 'livre' ? '#f1c40f' : v.b === 'approuve' ? '#f39c12' : v.b === 'vendu' ? '#3498db' : v.b === 'annule-credit' ? '#e74c3c' : v.b === 'annule-client' ? '#e67e22' : '#eee';
+                                const typeColor = v.t === 'N' ? '#3498db' : v.t === 'U' ? '#95a5a6' : v.t === 'C' ? '#2c3e50' : v.t === 'CMD' ? '#e67e22' : '#eee';
+                                // Fichiers F&I liés à ce bloc
+                                const blockFiles = fichiers[id] ? Object.values(fichiers[id]) : [];
+                                const filesHtml = blockFiles.length > 0
+                                    ? blockFiles.map(f => `<a href="${f.url}" target="_blank" style="display:block; font-size:7px; color:#2980b9; overflow:hidden; white-space:nowrap; text-decoration:none;" title="${f.name}">📎 ${f.name}</a>`).join('')
+                                    : '';
+                                html += `<div style="border-bottom:1px solid #eee; padding:2px; min-height:40px; background:${v.pin?'#f3e8ff':'#fff'}; position:relative;">
+                                    <span style="position:absolute; top:1px; right:1px; font-size:7px; padding:1px 2px; border-radius:2px; background:${typeColor}; color:white; font-weight:bold;">${v.t||'?'}</span>
+                                    <div style="font-size:9px; font-weight:bold; text-transform:uppercase; overflow:hidden; white-space:nowrap; padding-right:16px;">${v.gar==='oui'?'🛡️':''} ${v.c||''}</div>
+                                    <div style="font-size:8px; color:#666; overflow:hidden; white-space:nowrap;">${v.v||''}</div>
+                                    <div style="font-size:8px; color:#999;">${v.s||''}</div>
+                                    <div style="height:6px; border-radius:2px; margin-top:2px; background:${statutColor};"></div>
+                                    ${filesHtml}
+                                </div>`;
+                            } else {
+                                html += `<div style="min-height:40px;"></div>`;
+                            }
+                        }
+                        html += `</td>`;
+                    }
+                    html += `</tr>`;
+                });
+            });
+            html += `</tbody></table>`;
+            document.getElementById('archive-table-wrap').innerHTML = html;
+        }
+    </script>
+    </div><!-- end app-content -->
+</body>
+</html>
