@@ -1,0 +1,5 @@
+# Dépendances indispensables de Pilote Web.
+# Tout est gratuit ; seule l'API Anthropic est facturée à l'usage.
+anthropic>=1.1
+playwright>=1.48
+keyring>=25.0          # coffre à mots de passe de Windows (Credential Manager)

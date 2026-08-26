@@ -1,0 +1,25 @@
+{
+  "nom": "exemple_crm",
+  "description": "Modèle de profil de site. Copiez ce fichier dans %APPDATA%\\PiloteWeb\\profils\\ sous le nom de votre CRM, puis remplissez les champs. Un profil rend l'application nettement plus fiable qu'une visite « à l'aveugle ».",
+  "url_accueil": "https://exemple-crm.com",
+  "url_connexion": "https://exemple-crm.com/login",
+  "site_identifiants": "crm",
+  "authentification_2fa": {
+    "type": "courriel",
+    "expediteurs_attendus": ["no-reply@exemple-crm.com"],
+    "indice": "Exemple CRM",
+    "motif_code": "\\b(\\d{6})\\b"
+  },
+  "reperes": {
+    "connecte": "Tableau de bord",
+    "champ_utilisateur": "Courriel",
+    "champ_motdepasse": "Mot de passe",
+    "bouton_connexion": "Se connecter",
+    "champ_code_2fa": "Code de vérification"
+  },
+  "consignes": [
+    "Après la connexion, attendre l'apparition du texte « Tableau de bord ».",
+    "La recherche de dossier se fait par le champ « Rechercher » en haut à droite.",
+    "Ne jamais utiliser le bouton « Supprimer » sans confirmation explicite de l'utilisateur."
+  ]
+}
