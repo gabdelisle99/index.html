@@ -35,6 +35,8 @@ if errorlevel 1 set /a ECHECS+=1
 echo.
 
 echo --- 3/3 Essai complet sur une fausse page de CRM (vrai navigateur)
+echo     Le navigateur travaille SANS FENETRE : c'est normal de ne rien
+echo     voir s'ouvrir a l'ecran. Seul le resultat ci-dessous compte.
 call ".venv\Scripts\python.exe" tests\test_integration.py
 if errorlevel 1 set /a ECHECS+=1
 echo.

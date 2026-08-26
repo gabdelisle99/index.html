@@ -55,12 +55,15 @@ def executer() -> bool:
     fichier.write_text(PAGE, encoding="utf-8")
 
     config = Config()
+    # Sans fenêtre : le test ne doit pas voler le focus ni faire clignoter
+    # d'écran. Le navigateur travaille pour de vrai, mais invisiblement.
     config.valeurs["navigateur"]["fenetre_visible"] = False
     if os.environ.get("PILOTE_CHROME"):
         config.valeurs["navigateur"]["chemin_executable"] = os.environ["PILOTE_CHROME"]
     config.valeurs["mode"] = "confirmation"  # on vérifie aussi la confirmation
     journal = Journal(retention_jours=1)
     navigateur = Navigateur(config, journal, avertir=lambda message: print("ALERTE:", message))
+    print("Navigateur lancé sans fenêtre (rien ne s'ouvre à l'écran, c'est voulu).")
     navigateur.demarrer()
 
     confirmations: list[str] = []

@@ -99,3 +99,5 @@ Aucun de ces tests ne consomme d'API — ils ne coûtent rien.
 - `test_integration.py` : essai complet sur une fausse page de CRM, avec le vrai
   navigateur — remplissage, choix dans une liste, clic d'enregistrement, et
   vérification qu'une seule confirmation a été demandée, sur le bon geste.
+  Le navigateur y travaille **sans fenêtre** : rien ne s'ouvre à l'écran, c'est
+  voulu. Seul le résultat affiché compte.
