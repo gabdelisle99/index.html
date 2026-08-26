@@ -1,0 +1,7 @@
+# Dépendances de Pilote Web (toutes gratuites sauf l'API Anthropic, facturée à l'usage)
+anthropic>=1.1
+playwright>=1.48
+pyttsx3>=2.90          # synthèse vocale hors ligne (voix Windows SAPI5)
+keyring>=25.0          # coffre à mots de passe de Windows (Credential Manager)
+sounddevice>=0.4.6     # capture du micro
+vosk>=0.3.45           # reconnaissance vocale hors ligne, gratuite
