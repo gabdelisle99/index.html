@@ -1,0 +1,7 @@
+# Dépendances de la voix — facultatives.
+# Si leur installation échoue (version de Python trop récente pour l'une d'elles,
+# par exemple), l'application fonctionne quand même : on écrit la consigne au
+# clavier et on lit la réponse à l'écran.
+pyttsx3>=2.90          # synthèse vocale hors ligne (voix Windows SAPI5)
+sounddevice>=0.4.6     # capture du micro
+vosk>=0.3.45           # reconnaissance vocale hors ligne, gratuite

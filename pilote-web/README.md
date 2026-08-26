@@ -16,7 +16,10 @@ regarde l'écran, clique, tape, lit, extrait.
 ## Démarrage rapide
 
 1. Double-cliquez sur **`installer.bat`** (une seule fois, ~5 minutes).
-2. Double-cliquez sur **`lancer.bat`**.
+   *Si l'installation refuse de trouver Python, lancez `diagnostic.bat` : il dit
+   ce que votre ordinateur a réellement comme Python.*
+2. Double-cliquez sur **`tester.bat`** (gratuit, aucun appel à l'API), puis sur
+   **`lancer.bat`**.
 3. Onglet **Réglages** → collez votre clé d'API Anthropic → *Enregistrer la clé*.
 4. Onglet **Identifiants** → enregistrez le nom court du site, votre identifiant
    et votre mot de passe (ils vont dans le coffre de Windows, pas dans un fichier).

@@ -13,7 +13,8 @@ Comptez 20 à 30 minutes la première fois, dont beaucoup d'attente.
 Python est le moteur qui fait tourner l'application. Il est gratuit.
 
 1. Ouvrez le **Microsoft Store** (icône du sac bleu, ou menu Démarrer → tapez « Store »).
-2. Dans la barre de recherche, tapez **Python 3.12**.
+2. Dans la barre de recherche, tapez **Python 3.12** (3.11 et 3.13 conviennent
+   tout aussi bien).
 3. Cliquez sur **Obtenir** puis attendez la fin de l'installation.
 
 ✅ *Réussi si* : le Store affiche « Ouvrir » à la place de « Obtenir ».
@@ -45,8 +46,13 @@ sous-dossier `pilote`.
 ✅ *Réussi si* : la fenêtre affiche « INSTALLATION TERMINEE » et attend que vous
 appuyiez sur une touche.
 
-❌ *Si elle affiche « Python n'est pas installe »* : reprenez l'étape 1, puis
-redémarrez l'ordinateur, puis relancez `installer.bat`.
+❌ *Si elle affiche « Je n'arrive pas à démarrer Python »* **alors que Python est
+déjà installé** : c'est presque toujours que les « alias d'exécution
+d'application » sont désactivés. Menu Démarrer → **Paramètres** → **Applications**
+→ **Paramètres avancés des applications** → **Alias d'exécution d'application** →
+activez `python.exe` et `python3.exe`, puis relancez `installer.bat`.
+Si ça résiste, double-cliquez sur **`diagnostic.bat`** : il produit un fichier
+`diagnostic.txt` qui dit exactement ce que l'ordinateur a comme Python.
 
 ❌ *Si elle affiche « L'installation a echoue »* : vérifiez votre connexion
 Internet et relancez. En entreprise, un pare-feu peut bloquer les
@@ -211,6 +217,8 @@ la trace de tout ce qu'elle a fait.
 | Ce que vous voyez | Quoi faire |
 |---|---|
 | « installation incomplète » | relancez `installer.bat` |
+| « Je n'arrive pas à démarrer Python » | activez les alias d'exécution (voir étape 3), puis `diagnostic.bat` |
+| « La voix n'a pas pu etre installee » | ce n'est pas bloquant : consignes au clavier, réponses à l'écran |
 | « Votre clé d'API est absente ou invalide » | onglet Réglages → recollez la clé |
 | « L'API est momentanément saturée » | attendez une minute et redemandez |
 | « Je n'arrive pas à… après 3 tentatives » | le site a changé ou est lent ; dites à l'application où cliquer, ou créez un profil de site ([PROFILS.md](PROFILS.md)) |
