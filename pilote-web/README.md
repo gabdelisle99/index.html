@@ -79,6 +79,9 @@ dans le **Gestionnaire d'identification de Windows**.
 
 ## Vérifier que le socle fonctionne
 
+Double-cliquez sur **`tester.bat`** — il lance les trois séries et affiche le
+résultat en clair. Ou, en ligne de commande :
+
 ```
 .venv\Scripts\python.exe tests\test_socle.py
 .venv\Scripts\python.exe tests\test_boucle.py
